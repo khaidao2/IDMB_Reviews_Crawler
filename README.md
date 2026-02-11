@@ -37,15 +37,23 @@ python src/crawl_film.py
 
 ### 2. Thu thập đánh giá (Review)
 
-Để crawl review cho danh sách phim đã định nghĩa (ví dụ: các phần phim Avatar), chạy:
+Để crawl review cho một phim bất kỳ, sử dụng file `src/main.py` với tham số là ID hoặc URL của phim trên IMDb.
 
+**Cú pháp:**
 ```bash
-python src/main.py
+python src/main.py <IMDb_ID_hoặc_URL>
 ```
 
--   Dữ liệu review sẽ được lưu tại: `imdb_avatar_reviews.csv`
+**Ví dụ:**
+```bash
+# Crawl bằng ID (Avatar)
+python src/main.py tt0499549
 
-Để crawl review cho một phim bất kỳ, bạn có thể sửa đổi `src/crawl_review.py` hoặc sử dụng các hàm trong đó.
+# Hoặc crawl bằng URL
+python src/main.py https://www.imdb.com/title/tt0499549/
+```
+
+-   Dữ liệu review sẽ được lưu tại: `imdb_reviews.csv` (các lần chạy sau sẽ nối tiếp vào file này).
 
 ## 📂 Cấu trúc dữ liệu đầu ra
 

@@ -100,85 +100,82 @@ python src/crawl_film.py
 
 ## 3. Quy trình Crawl Đánh giá (Review Crawler)
 
-Script: `src/main.py`.
+Script: `src/crawl_review.py` (Logic chính) và `src/main.py` (CLI entry point).
 
 ### Cách hoạt động
 - **Nguồn dữ liệu**: Trang review của từng phim trên IMDb.
 - **Công nghệ**: Selenium WebDriver (Chrome).
+- **Luồng xử lý**:
+    1.  `src/main.py` nhận tham số (ID hoặc URL) từ dòng lệnh.
+    2.  Gọi hàm `start_crawl` trong `src/crawl_review.py`.
+    3.  Khởi tạo WebDriver và truy cập URL.
+    4.  Tự động cuộn trang (Infinite Scroll) để tải toàn bộ review.
+    5.  Parse HTML bằng BeautifulSoup và lưu vào CSV.
 
-### Trích dẫn Code
+### Trích dẫn Code (`src/crawl_review.py`)
 
-**1. Khởi tạo WebDriver (`src/main.py`):**
-Cấu hình Chrome để chạy ổn định, tắt `blink-features` để tránh bị phát hiện là bot.
-
+**1. Khởi tạo WebDriver:**
 ```python
 def init_driver():
     chrome_options = Options()
     chrome_options.add_argument("--disable-blink-features=AutomationControlled")
     chrome_options.add_argument("--start-maximized")
-
-    driver = webdriver.Chrome(
-        service=Service(ChromeDriverManager().install()),
-        options=chrome_options
-    )
+    # ...
     return driver
 ```
 
-**2. Logic Cuộn trang (Scroll) để tải toàn bộ review:**
-IMDb sử dụng infinite scroll (hoặc nút "Load More"). Đoạn code sau thực hiện cuộn xuống cuối trang liên tục cho đến khi không còn nội dung mới.
-
+**2. Logic Cuộn trang (Scroll):**
 ```python
-    # scroll load
-    last_height = driver.execute_script("return document.body.scrollHeight")
+        # ---- scroll to load all reviews ----
+        last_height = driver.execute_script("return document.body.scrollHeight")
 
-    while True:
-        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-        time.sleep(2)
+        while True:
+            driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+            time.sleep(2)
 
-        new_height = driver.execute_script("return document.body.scrollHeight")
-        if new_height == last_height:
-            break
-        last_height = new_height
+            new_height = driver.execute_script("return document.body.scrollHeight")
+            if new_height == last_height:
+                break
+            last_height = new_height
 ```
 
-**3. Phân tích HTML bằng BeautifulSoup:**
-Sau khi tải hết, lấy `page_source` và dùng BeautifulSoup để trích xuất thông tin từng thẻ review (`article.user-review-item`).
-
+**3. Phân tích HTML:**
 ```python
-def parse_reviews(html: str, movie: dict):
+def parse_reviews(html: str, title_id: str):
     soup = BeautifulSoup(html, "html.parser")
     reviews = soup.select("article.user-review-item")
 
     for r in reviews:
-        try:
-            author = r.select_one('[data-testid="author-link"]')
-            author = author.text.strip() if author else None
-
-            rating = r.select_one(".ipc-rating-star--rating")
-            rating = rating.text.strip() if rating else None
-
-            text = r.select_one(".ipc-html-content-inner-div")
-            text = text.text.strip() if text else None
-            
-            # ... store data ...
+        # ... extract data ...
+        row = {
+            "title_id": title_id,
+            "author": author,
+            # ...
+        }
+        append_csv(row)
 ```
 
 ### Cách chạy
-Để crawl review cho danh sách phim Avatar (được định nghĩa trong `src/main.py`):
+Sử dụng CLI `src/main.py` để crawl theo ID hoặc URL bất kỳ:
+
 ```bash
-python src/main.py
+# Crawl bằng ID
+python src/main.py tt0499549
+
+# Hoặc bằng URL
+python src/main.py https://www.imdb.com/title/tt0499549/
 ```
 
 ### Output
-- File: `imdb_avatar_reviews.csv` (lưu tại thư mục gốc hoặc theo cấu hình).
+- File: `imdb_reviews.csv` (lưu tại thư mục gốc).
 
 ---
 
 ## 4. Cấu trúc Project
 
 - `src/`: Chứa mã nguồn chính.
-    - `crawl_film.py`: Logic crawl thông tin phim.
-    - `crawl_review.py`: Logic crawl review (đơn lẻ).
-    - `main.py`: Script chính để điều phối việc crawl review cho nhiều phim.
+    - `crawl_film.py`: Logic crawl thông tin phim (GraphQL).
+    - `crawl_review.py`: Logic crawl review (Selenium), chứa các hàm xử lý chính.
+    - `main.py`: Giao diện dòng lệnh (CLI) để chạy crawler review.
     - `storage/`: Chứa file trạng thái (`state.json`) và các file tạm.
 - `output/`: Thư mục chứa kết quả crawl (CSV phim).
