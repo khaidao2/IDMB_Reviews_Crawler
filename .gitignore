@@ -1,12 +1,25 @@
-# Python-generated files
+# Python cache
 __pycache__/
-*.py[oc]
+*.py[cod]
+*.pyo
+
+# Build / packaging
 build/
 dist/
 wheels/
-*.egg-info
+*.egg-info/
+.eggs/
 
 # Virtual environments
-.venv
-.csv
-.json
+.venv/
+venv/
+env/
+
+# Data files (nếu KHÔNG muốn commit dữ liệu)
+*.csv
+*.json
+
+# OS / Editor
+.DS_Store
+.vscode/
+.idea/
